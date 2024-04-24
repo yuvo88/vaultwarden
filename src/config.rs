@@ -500,6 +500,12 @@ make_config! {
         /// Events days retain |> Number of days to retain events stored in the database. If unset, events are kept indefinitely.
         events_days_retain:     i64,    false,   option;
     },
+    /// Admin Two Factor authentication
+    admin_two_factor_authentication {
+        /// Authenticator |> Use an authenticator app (sech as Authy or Google Authenticator)
+        /// to generate time-based verification codes
+        authenticator:                 bool, true,   def,    false;
+    },
 
     /// Advanced settings
     advanced {
