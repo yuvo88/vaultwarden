@@ -60,6 +60,7 @@ pub fn routes() -> Vec<Route> {
         diagnostics,
         get_diagnostics_config,
         resend_user_invite,
+        two_factor_authentication,
     ]
 }
 
@@ -336,6 +337,13 @@ async fn get_users_json(_token: AdminToken, mut conn: DbConn) -> Json<Value> {
     }
 
     Json(Value::Array(users_json))
+}
+
+#[get("/two-factor")]
+async fn two_factor_authentication(_token: AdminToken, mut _conn: DbConn) -> ApiResult<Html<String>> {
+    let data: Vec<Value> = Vec::with_capacity(0);
+    let text = AdminTemplateData::new("admin/two_factor", json!(data)).render()?;
+    Ok(Html(text))
 }
 
 #[get("/users/overview")]

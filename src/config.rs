@@ -1317,6 +1317,7 @@ where
     reg!("admin/users");
     reg!("admin/organizations");
     reg!("admin/diagnostics");
+    reg!("admin/two_factor");
 
     reg!("404");
 
