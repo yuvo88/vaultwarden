@@ -2,6 +2,7 @@ use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::env;
+use data_encoding::BASE32;
 
 use rocket::serde::json::Json;
 use rocket::{
@@ -12,6 +13,7 @@ use rocket::{
     Catcher, Route,
 };
 
+use crate::crypto;
 use crate::{
     api::{
         core::{log_event, two_factor},
@@ -61,6 +63,7 @@ pub fn routes() -> Vec<Route> {
         get_diagnostics_config,
         resend_user_invite,
         two_factor_authentication,
+        generate_authenticator,
     ]
 }
 
@@ -344,6 +347,24 @@ async fn two_factor_authentication(_token: AdminToken, mut _conn: DbConn) -> Api
     let data: Vec<Value> = Vec::with_capacity(0);
     let text = AdminTemplateData::new("admin/two_factor", json!(data)).render()?;
     Ok(Html(text))
+}
+
+#[post("/two-factor/get-authenticator")]
+async fn generate_authenticator(_token: AdminToken, mut conn: DbConn) -> JsonResult {
+    let data = ACTING_ADMIN_USER;
+    let type_ = TwoFactorType::Authenticator as i32;
+    let twofactor = TwoFactor::find_by_user_and_type(&data, type_, &mut conn).await;
+
+    let (enabled, key) = match twofactor {
+        Some(tf) => (true, tf.data),
+        _ => (false, crypto::encode_random_bytes::<20>(BASE32)),
+    };
+
+    Ok(Json(json!({
+        "Enabled": enabled,
+        "Key": key,
+        "Object": "twoFactorAuthenticator"
+    })))
 }
 
 #[get("/users/overview")]
