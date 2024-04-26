@@ -46,11 +46,11 @@ async fn generate_authenticator(data: JsonUpcase<PasswordOrOtpData>, headers: He
 
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
-struct EnableAuthenticatorData {
-    Key: String,
-    Token: NumberOrString,
-    MasterPasswordHash: Option<String>,
-    Otp: Option<String>,
+pub struct EnableAuthenticatorData {
+    pub Key: String,
+    pub Token: NumberOrString,
+    pub MasterPasswordHash: Option<String>,
+    pub Otp: Option<String>,
 }
 
 #[post("/two-factor/authenticator", data = "<data>")]

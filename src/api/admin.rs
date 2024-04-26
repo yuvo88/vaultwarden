@@ -18,11 +18,13 @@ use crate::{
     api::{
         core::{log_event, two_factor},
         unregister_push_device, ApiResult, EmptyResult, JsonResult, Notify,
+        JsonUpcase,
     },
     auth::{decode_admin, encode_jwt, generate_admin_claims, ClientIp},
     config::ConfigBuilder,
     db::{backup_database, get_sql_server_version, models::*, DbConn, DbConnType},
     error::{Error, MapResult},
+    api::core::two_factor::authenticator::{EnableAuthenticatorData, validate_totp_code},
     mail,
     util::{
         container_base_image, format_naive_datetime_local, get_display_size, get_reqwest_client,
@@ -64,6 +66,7 @@ pub fn routes() -> Vec<Route> {
         resend_user_invite,
         two_factor_authentication,
         generate_authenticator,
+        activate_authenticator,
     ]
 }
 
@@ -362,6 +365,39 @@ async fn generate_authenticator(_token: AdminToken, mut conn: DbConn) -> JsonRes
 
     Ok(Json(json!({
         "Enabled": enabled,
+        "Key": key,
+        "Object": "twoFactorAuthenticator"
+    })))
+}
+
+#[post("/two-factor/authenticator", data = "<data>")]
+async fn activate_authenticator(
+    data: JsonUpcase<EnableAuthenticatorData>,
+    token: AdminToken,
+    mut conn: DbConn,
+) -> JsonResult {
+    let data: EnableAuthenticatorData = data.into_inner().data;
+    let key = data.Key;
+    let token_number = data.Token.into_string();
+    let user_uuid = ACTING_ADMIN_USER;
+
+    // Validate key as base32 and 20 bytes length
+    let decoded_key: Vec<u8> = match BASE32.decode(key.as_bytes()) {
+        Ok(decoded) => decoded,
+        _ => err!("Invalid totp secret"),
+    };
+
+    if decoded_key.len() != 20 {
+        err!("Invalid key length")
+    }
+
+    // Validate the token provided with the key, and save new twofactor
+    validate_totp_code(&user_uuid, &token_number, &key.to_uppercase(), &token.ip, &mut conn).await?;
+
+    // generate_recover_code(&mut user, &mut conn).await;
+
+    Ok(Json(json!({
+        "Enabled": true,
         "Key": key,
         "Object": "twoFactorAuthenticator"
     })))
