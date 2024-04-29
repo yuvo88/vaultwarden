@@ -12,6 +12,7 @@ mod org_policy;
 mod organization;
 mod send;
 mod two_factor;
+mod two_factor_admin;
 mod two_factor_incomplete;
 mod user;
 

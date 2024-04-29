@@ -165,6 +165,16 @@ table! {
 }
 
 table! {
+    twofactor_admin (uuid) {
+        uuid -> Text,
+        atype -> Integer,
+        enabled -> Bool,
+        data -> Text,
+        last_used -> BigInt,
+    }
+}
+
+table! {
     twofactor_incomplete (user_uuid, device_uuid) {
         user_uuid -> Text,
         device_uuid -> Text,
@@ -360,4 +370,5 @@ allow_tables_to_appear_in_same_query!(
     collections_groups,
     event,
     auth_requests,
+    twofactor_admin,
 );

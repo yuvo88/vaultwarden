@@ -354,7 +354,7 @@ async fn two_factor_authentication(_token: AdminToken, mut _conn: DbConn) -> Api
 
 #[post("/two-factor/get-authenticator")]
 async fn generate_authenticator(_token: AdminToken, mut conn: DbConn) -> JsonResult {
-    let data = ACTING_ADMIN_USER;
+    let data = "17c59969-57f8-4f48-a1fa-2aed86d4e52e";
     let type_ = TwoFactorType::Authenticator as i32;
     let twofactor = TwoFactor::find_by_user_and_type(&data, type_, &mut conn).await;
 
@@ -379,7 +379,7 @@ async fn activate_authenticator(
     let data: EnableAuthenticatorData = data.into_inner().data;
     let key = data.Key;
     let token_number = data.Token.into_string();
-    let user_uuid = ACTING_ADMIN_USER;
+    let user_uuid = data.MasterPasswordHash.unwrap();
 
     // Validate key as base32 and 20 bytes length
     let decoded_key: Vec<u8> = match BASE32.decode(key.as_bytes()) {
