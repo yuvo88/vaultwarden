@@ -6,7 +6,7 @@ use crate::{
     auth::Headers,
     crypto,
     db::{
-        models::{TwoFactor, TwoFactorType},
+        models::{TwoFactor, TwoFactorType, ITwoFactor},
         DbConn,
     },
     error::{Error, MapResult},

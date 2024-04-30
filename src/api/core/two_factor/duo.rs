@@ -11,7 +11,7 @@ use crate::{
     auth::Headers,
     crypto,
     db::{
-        models::{EventType, TwoFactor, TwoFactorType, User},
+        models::{EventType, TwoFactor, TwoFactorType, User, ITwoFactor},
         DbConn,
     },
     error::MapResult,

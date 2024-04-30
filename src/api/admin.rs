@@ -22,9 +22,9 @@ use crate::{
     },
     auth::{decode_admin, encode_jwt, generate_admin_claims, ClientIp},
     config::ConfigBuilder,
-    db::{backup_database, get_sql_server_version, models::*, DbConn, DbConnType},
+    db::{backup_database, get_sql_server_version, models::*, DbConn, DbConnType, models::TwoFactorAdmin},
     error::{Error, MapResult},
-    api::core::two_factor::authenticator::{EnableAuthenticatorData, validate_totp_code},
+    api::core::two_factor::authenticator::{EnableAuthenticatorData, validate_totp_code_two_factor},
     mail,
     util::{
         container_base_image, format_naive_datetime_local, get_display_size, get_reqwest_client,
@@ -354,9 +354,8 @@ async fn two_factor_authentication(_token: AdminToken, mut _conn: DbConn) -> Api
 
 #[post("/two-factor/get-authenticator")]
 async fn generate_authenticator(_token: AdminToken, mut conn: DbConn) -> JsonResult {
-    let data = "17c59969-57f8-4f48-a1fa-2aed86d4e52e";
     let type_ = TwoFactorType::Authenticator as i32;
-    let twofactor = TwoFactor::find_by_user_and_type(&data, type_, &mut conn).await;
+    let twofactor = TwoFactorAdmin::find_by_type(type_, &mut conn).await;
 
     let (enabled, key) = match twofactor {
         Some(tf) => (true, tf.data),
@@ -379,7 +378,6 @@ async fn activate_authenticator(
     let data: EnableAuthenticatorData = data.into_inner().data;
     let key = data.Key;
     let token_number = data.Token.into_string();
-    let user_uuid = data.MasterPasswordHash.unwrap();
 
     // Validate key as base32 and 20 bytes length
     let decoded_key: Vec<u8> = match BASE32.decode(key.as_bytes()) {
@@ -391,8 +389,10 @@ async fn activate_authenticator(
         err!("Invalid key length")
     }
 
+    let twofactor = TwoFactorAdmin::new(TwoFactorType::Authenticator, key.to_uppercase());
+
     // Validate the token provided with the key, and save new twofactor
-    validate_totp_code(&user_uuid, &token_number, &key.to_uppercase(), &token.ip, &mut conn).await?;
+    validate_totp_code_two_factor(twofactor, &token_number, &key.to_uppercase(), &token.ip, &mut conn).await?;
 
     // generate_recover_code(&mut user, &mut conn).await;
 

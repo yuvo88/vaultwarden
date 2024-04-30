@@ -10,7 +10,7 @@ use crate::{
     },
     auth::Headers,
     db::{
-        models::{EventType, TwoFactor, TwoFactorType},
+        models::{EventType, TwoFactor, TwoFactorType, ITwoFactor},
         DbConn,
     },
     error::{Error, MapResult},

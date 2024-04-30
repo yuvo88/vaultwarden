@@ -39,6 +39,11 @@ pub enum TwoFactorType {
     ProtectedActions = 2000,
 }
 
+pub trait ITwoFactor {
+    async fn save(&self, conn: &mut DbConn) -> EmptyResult;
+    fn get_last_used(&self) -> i64;
+    fn set_last_used(&mut self, last_used: i64);
+}
 /// Local methods
 impl TwoFactor {
     pub fn new(user_uuid: String, atype: TwoFactorType, data: String) -> Self {
@@ -69,9 +74,8 @@ impl TwoFactor {
     }
 }
 
-/// Database methods
-impl TwoFactor {
-    pub async fn save(&self, conn: &mut DbConn) -> EmptyResult {
+impl ITwoFactor for TwoFactor{
+    async fn save(&self, conn: &mut DbConn) -> EmptyResult {
         db_run! { conn:
             sqlite, mysql {
                 match diesel::replace_into(twofactor::table)
@@ -100,6 +104,7 @@ impl TwoFactor {
                     .map_res("Error deleting twofactor for insert")?;
 
                 diesel::insert_into(twofactor::table)
+               
                     .values(&value)
                     .on_conflict(twofactor::uuid)
                     .do_update()
@@ -109,7 +114,18 @@ impl TwoFactor {
             }
         }
     }
+    
+    fn get_last_used(&self) -> i64 {
+        self.last_used
+    }
 
+    fn set_last_used(&mut self, last_used: i64) {
+        self.last_used = last_used;
+    }
+}
+
+/// Database methods
+impl TwoFactor {
     pub async fn delete(self, conn: &mut DbConn) -> EmptyResult {
         db_run! { conn: {
             diesel::delete(twofactor::table.filter(twofactor::uuid.eq(self.uuid)))

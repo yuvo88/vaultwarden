@@ -10,7 +10,7 @@ use crate::{
     auth::{ClientIp, Headers},
     crypto,
     db::{
-        models::{EventType, TwoFactor, TwoFactorType},
+        models::{EventType, TwoFactor, TwoFactorType, ITwoFactor},
         DbConn,
     },
     util::NumberOrString,
@@ -119,25 +119,38 @@ pub async fn validate_totp_code_str(
     validate_totp_code(user_uuid, totp_code, secret, ip, conn).await
 }
 
-pub async fn validate_totp_code(
+async fn validate_totp_code(
     user_uuid: &str,
     totp_code: &str,
     secret: &str,
     ip: &ClientIp,
     conn: &mut DbConn,
 ) -> EmptyResult {
+    let twofactor =
+        match TwoFactor::find_by_user_and_type(user_uuid, TwoFactorType::Authenticator as i32, conn).await {
+            Some(tf) => tf,
+            _ => TwoFactor::new(user_uuid.to_string(), TwoFactorType::Authenticator, secret.to_string()),
+        };
+
+        validate_totp_code_two_factor(twofactor, totp_code, secret, ip, conn).await
+}
+
+pub async fn validate_totp_code_two_factor<T>(
+    mut twofactor: T,
+    totp_code: &str,
+    secret: &str,
+    ip: &ClientIp,
+    conn: &mut DbConn,
+) -> EmptyResult 
+where
+T: ITwoFactor
+{
     use totp_lite::{totp_custom, Sha1};
 
     let decoded_secret = match BASE32.decode(secret.as_bytes()) {
         Ok(s) => s,
         Err(_) => err!("Invalid TOTP secret"),
     };
-
-    let mut twofactor =
-        match TwoFactor::find_by_user_and_type(user_uuid, TwoFactorType::Authenticator as i32, conn).await {
-            Some(tf) => tf,
-            _ => TwoFactor::new(user_uuid.to_string(), TwoFactorType::Authenticator, secret.to_string()),
-        };
 
     // The amount of steps back and forward in time
     // Also check if we need to disable time drifted TOTP codes.
@@ -157,7 +170,7 @@ pub async fn validate_totp_code(
         let generated = totp_custom::<Sha1>(30, 6, &decoded_secret, time);
 
         // Check the given code equals the generated and if the time_step is larger then the one last used.
-        if generated == totp_code && time_step > twofactor.last_used {
+        if generated == totp_code && time_step > twofactor.get_last_used() {
             // If the step does not equals 0 the time is drifted either server or client side.
             if step != 0 {
                 warn!("TOTP Time drift detected. The step offset is {}", step);
@@ -165,10 +178,10 @@ pub async fn validate_totp_code(
 
             // Save the last used time step so only totp time steps higher then this one are allowed.
             // This will also save a newly created twofactor if the code is correct.
-            twofactor.last_used = time_step;
+            twofactor.set_last_used(time_step);
             twofactor.save(conn).await?;
             return Ok(());
-        } else if generated == totp_code && time_step <= twofactor.last_used {
+        } else if generated == totp_code && time_step <= twofactor.get_last_used() {
             warn!("This TOTP or a TOTP code within {} steps back or forward has already been used!", steps);
             err!(
                 format!("Invalid TOTP code! Server time: {} IP: {}", current_time.format("%F %T UTC"), ip.ip),

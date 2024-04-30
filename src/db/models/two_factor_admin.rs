@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::{api::EmptyResult, db::DbConn, error::MapResult, db::models::two_factor::TwoFactorType};
+use crate::{api::EmptyResult, db::DbConn, error::MapResult, db::models::two_factor::{TwoFactorType, ITwoFactor}};
 
 db_object! {
     #[derive(Identifiable, Queryable, Insertable, AsChangeset)]
@@ -44,9 +44,8 @@ impl TwoFactorAdmin {
     }
 }
 
-/// Database methods
-impl TwoFactorAdmin {
-    pub async fn save(&self, conn: &mut DbConn) -> EmptyResult {
+impl ITwoFactor for TwoFactorAdmin{
+    async fn save(&self, conn: &mut DbConn) -> EmptyResult {
         db_run! { conn:
             sqlite, mysql {
                 match diesel::replace_into(twofactor_admin::table)
@@ -84,7 +83,18 @@ impl TwoFactorAdmin {
             }
         }
     }
+    
+    fn get_last_used(&self) -> i64 {
+        self.last_used
+    }
 
+    fn set_last_used(&mut self, last_used: i64) {
+        self.last_used = last_used;
+    }
+}
+
+/// Database methods
+impl TwoFactorAdmin {
     pub async fn delete(self, conn: &mut DbConn) -> EmptyResult {
         db_run! { conn: {
             diesel::delete(twofactor_admin::table.filter(twofactor_admin::uuid.eq(self.uuid)))
