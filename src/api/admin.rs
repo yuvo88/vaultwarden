@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
+use num_traits::FromPrimitive;
 use serde_json::Value;
 use std::env;
 use data_encoding::BASE32;
@@ -30,7 +31,7 @@ use crate::{
         container_base_image, format_naive_datetime_local, get_display_size, get_reqwest_client,
         is_running_in_container, NumberOrString,
     },
-    api::identity::twofactor_admin_auth,
+    api::identity::selected_data,
     CONFIG, VERSION,
 };
 
@@ -173,12 +174,15 @@ fn render_admin_login(msg: Option<&str>, redirect: Option<String>) -> ApiResult<
 struct LoginForm {
     token: String,
     redirect: Option<String>,
+    two_factor_provider: Option<i32>,
+    two_factor_token: Option<String>,
+
 }
 
 #[post("/", data = "<data>")]
-fn post_admin_login(data: Form<LoginForm>, cookies: &CookieJar<'_>, ip: ClientIp) -> Result<Redirect, AdminResponse> {
+async fn post_admin_login(data: Form<LoginForm>, cookies: &CookieJar<'_>, ip: ClientIp, mut conn: DbConn) -> Result<Redirect, AdminResponse> {
     let data = data.into_inner();
-    let redirect = data.redirect;
+    let redirect = data.redirect.clone();
 
     if crate::ratelimit::check_limit_admin(&ip.ip).is_err() {
         return Err(AdminResponse::TooManyRequests(render_admin_login(
@@ -192,6 +196,13 @@ fn post_admin_login(data: Form<LoginForm>, cookies: &CookieJar<'_>, ip: ClientIp
         error!("Invalid admin token. IP: {}", ip.ip);
         Err(AdminResponse::Unauthorized(render_admin_login(Some("Invalid admin token, please try again."), redirect)))
     } else {
+        match _twofactor_admin_auth(&data, &ip, &mut conn).await {
+            Ok(_) => (),
+            Err(err) => {
+                error!("{}", err);
+                return Err(AdminResponse::Unauthorized(render_admin_login(Some("No 2FA was provided."), redirect)));
+            },
+        };
         // If the token received is valid, generate JWT and save it as a cookie
         let claims = generate_admin_claims();
         let jwt = encode_jwt(&claims);
@@ -229,6 +240,52 @@ fn _validate_token(token: &str) -> bool {
         }
         Some(t) => crate::crypto::ct_eq(t.trim(), token.trim()),
     }
+}
+
+async fn _twofactor_admin_auth(
+    login_data: &LoginForm,
+    ip: &ClientIp,
+    conn: &mut DbConn,
+) -> ApiResult<()> {
+
+    let twofactors = TwoFactorAdmin::find_all(conn).await;
+    
+    if twofactors.is_empty() {
+        return Ok(());
+    }
+
+    let selected_id = match login_data.two_factor_provider {
+        Some(provider) => provider,
+        None => err!("Two Factor provider wasn't provided")
+    };
+
+    let twofactor_code = match login_data.two_factor_token {
+        Some(ref token) => token,
+        None => err!("Two Factor token wan't provided")
+    };
+
+    let selected_twofactor = twofactors.into_iter().find(|tf| tf.atype == selected_id && tf.enabled);
+
+    let selected_data = selected_data(selected_twofactor);
+    let twofactor = match TwoFactorAdmin::find_by_type(selected_id, conn).await {
+        Some(tf) => tf,
+        None => err!("Two Factor type doesn't exist"),
+    };
+
+    match TwoFactorType::from_i32(selected_id) {
+        Some(TwoFactorType::Authenticator) => {
+            validate_totp_code_two_factor(twofactor, twofactor_code, &selected_data?, ip, conn).await?
+        },
+        _ => err!(
+            "Invalid two factor provider",
+            ErrorEvent {
+                event: EventType::UserFailedLogIn2fa
+            }
+        ),
+    }
+
+    Ok(())
+
 }
 
 #[derive(Serialize)]
