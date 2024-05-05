@@ -551,8 +551,47 @@ async fn twofactor_auth(
     }
 }
 
-fn _selected_data(tf: Option<TwoFactor>) -> ApiResult<String> {
-    tf.map(|t| t.data).map_res("Two factor doesn't exist")
+pub async fn twofactor_admin_auth(
+    two_factor_provider: i32,
+    two_factor_token: String,
+    ip: &ClientIp,
+    conn: &mut DbConn,
+) -> ApiResult<Option<String>> {
+    let twofactors = TwoFactorAdmin::find_all(conn).await;
+
+    let selected_id = two_factor_provider;
+
+    let twofactor_code = &*two_factor_token;
+
+    let selected_twofactor = twofactors.into_iter().find(|tf| tf.atype == selected_id && tf.enabled);
+
+    let selected_data = _selected_data(selected_twofactor);
+    let twofactor = match TwoFactorAdmin::find_by_type(selected_id, conn).await {
+        Some(tf) => tf,
+        None => err!("Two Factor type doesn't exist"),
+    };
+
+    match TwoFactorType::from_i32(selected_id) {
+        Some(TwoFactorType::Authenticator) => {
+            authenticator::validate_totp_code_two_factor(twofactor, twofactor_code, &selected_data?, ip, conn).await?
+        }
+        _ => err!(
+            "Invalid two factor provider",
+            ErrorEvent {
+                event: EventType::UserFailedLogIn2fa
+            }
+        ),
+    }
+
+    Ok(None)
+
+}
+
+fn _selected_data<T>(tf: Option<T>) -> ApiResult<String> 
+where
+T: ITwoFactor
+{
+    tf.map(|t| t.get_data()).map_res("Two factor doesn't exist")
 }
 
 async fn _json_err_twofactor(providers: &[i32], user_uuid: &str, conn: &mut DbConn) -> ApiResult<Value> {

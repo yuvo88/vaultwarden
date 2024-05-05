@@ -91,6 +91,10 @@ impl ITwoFactor for TwoFactorAdmin{
     fn set_last_used(&mut self, last_used: i64) {
         self.last_used = last_used;
     }
+    
+    fn get_data(&self) -> String {
+        self.data.clone()
+    }
 }
 
 /// Database methods
@@ -109,6 +113,16 @@ impl TwoFactorAdmin {
                 .filter(twofactor_admin::atype.eq(atype))
                 .first::<TwoFactorAdminDb>(conn)
                 .ok()
+                .from_db()
+        }}
+    }
+
+    pub async fn find_all(conn: &mut DbConn) -> Vec<Self> {
+        db_run! { conn: {
+            twofactor_admin::table
+                .filter(twofactor_admin::atype.lt(1000)) // Filter implementation types
+                .load::<TwoFactorAdminDb>(conn)
+                .expect("Error loading twofactor")
                 .from_db()
         }}
     }

@@ -43,6 +43,7 @@ pub trait ITwoFactor {
     async fn save(&self, conn: &mut DbConn) -> EmptyResult;
     fn get_last_used(&self) -> i64;
     fn set_last_used(&mut self, last_used: i64);
+    fn get_data(&self) -> String;
 }
 /// Local methods
 impl TwoFactor {
@@ -121,6 +122,10 @@ impl ITwoFactor for TwoFactor{
 
     fn set_last_used(&mut self, last_used: i64) {
         self.last_used = last_used;
+    }
+
+    fn get_data(&self) -> String {
+        self.data.clone()
     }
 }
 
