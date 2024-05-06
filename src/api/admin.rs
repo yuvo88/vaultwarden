@@ -69,6 +69,7 @@ pub fn routes() -> Vec<Route> {
         two_factor_authentication,
         generate_authenticator,
         activate_authenticator,
+        two_factor_login_page,
     ]
 }
 
@@ -157,7 +158,7 @@ fn admin_login(request: &Request<'_>) -> ApiResult<Html<String>> {
 
 fn render_admin_login(msg: Option<&str>, redirect: Option<String>) -> ApiResult<Html<String>> {
     // If there is an error, show it
-    let msg = msg.map(|msg| format!("Error: {msg}"));
+    let msg: Option<String> = msg.map(|msg| format!("Error: {msg}"));
     let json = json!({
         "page_content": "admin/login",
         "error": msg,
@@ -407,6 +408,18 @@ async fn get_users_json(_token: AdminToken, mut conn: DbConn) -> Json<Value> {
 async fn two_factor_authentication(_token: AdminToken, mut _conn: DbConn) -> ApiResult<Html<String>> {
     let data: Vec<Value> = Vec::with_capacity(0);
     let text = AdminTemplateData::new("admin/two_factor", json!(data)).render()?;
+    Ok(Html(text))
+}
+
+#[get("/2fa")]
+async fn two_factor_login_page(mut _conn: DbConn) -> ApiResult<Html<String>> {
+    let json = json!({
+        "page_content": "admin/two_factor_token",
+        "urlpath": CONFIG.domain_path()
+    });
+
+    // Return the page
+    let text = CONFIG.render_template(BASE_TEMPLATE, &json)?;
     Ok(Html(text))
 }
 

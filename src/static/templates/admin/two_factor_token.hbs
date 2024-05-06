@@ -1,0 +1,13 @@
+<main class="container-xl">
+    <div class="align-items-center p-3 mb-3 text-opacity-75 text-light bg-danger rounded shadow">
+        <div>
+            <h6 class="mb-0 text-light">Two Factor token needs to be provided</h6>
+            <small>Please provide it below:</small>
+
+            <form class="form-inline" method="post" action="{{urlpath}}/admin">
+                <input type="text" class="form-control w-50 mr-2" name="token" placeholder="Enter two factor token" autofocus="autofocus">
+                <button type="submit" class="btn btn-primary mt-2">Enter</button>
+            </form>
+        </div>
+    </div>
+</main>

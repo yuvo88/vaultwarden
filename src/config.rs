@@ -1318,6 +1318,7 @@ where
     reg!("admin/organizations");
     reg!("admin/diagnostics");
     reg!("admin/two_factor");
+    reg!("admin/two_factor_token");
 
     reg!("404");
 
