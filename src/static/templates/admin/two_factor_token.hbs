@@ -5,7 +5,9 @@
             <small>Please provide it below:</small>
 
             <form class="form-inline" method="post" action="{{urlpath}}/admin">
-                <input type="text" class="form-control w-50 mr-2" name="token" placeholder="Enter two factor token" autofocus="autofocus">
+                <input type="text" class="form-control w-50 mr-2" name="two_factor_token" placeholder="Enter two factor token" autofocus="autofocus">
+                <input type="hidden" name="token" value="{{token}}">
+                <input type="hidden" name="two_factor_provider" value="{{two_factor_provider}}">
                 <button type="submit" class="btn btn-primary mt-2">Enter</button>
             </form>
         </div>
