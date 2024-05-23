@@ -161,6 +161,7 @@ pub fn static_files(filename: &str) -> Result<(ContentType, &'static [u8]), Erro
         "admin.css" => Ok((ContentType::CSS, include_bytes!("../static/scripts/admin.css"))),
         "admin.js" => Ok((ContentType::JavaScript, include_bytes!("../static/scripts/admin.js"))),
         "admin_settings.js" => Ok((ContentType::JavaScript, include_bytes!("../static/scripts/admin_settings.js"))),
+        "admin_twofactor.js" => Ok((ContentType::JavaScript, include_bytes!("../static/scripts/admin_twofactor.js"))),
         "admin_users.js" => Ok((ContentType::JavaScript, include_bytes!("../static/scripts/admin_users.js"))),
         "admin_organizations.js" => {
             Ok((ContentType::JavaScript, include_bytes!("../static/scripts/admin_organizations.js")))
@@ -175,6 +176,9 @@ pub fn static_files(filename: &str) -> Result<(ContentType, &'static [u8]), Erro
         "datatables.css" => Ok((ContentType::CSS, include_bytes!("../static/scripts/datatables.css"))),
         "jquery-3.7.1.slim.js" => {
             Ok((ContentType::JavaScript, include_bytes!("../static/scripts/jquery-3.7.1.slim.js")))
+        },
+        "jquery.qrcode.min.js" => {
+            Ok((ContentType::JavaScript, include_bytes!("../static/scripts/jquery.qrcode.min.js")))
         }
         _ => err!(format!("Static file not found: {filename}")),
     }
