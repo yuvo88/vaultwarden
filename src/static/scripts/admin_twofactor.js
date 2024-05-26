@@ -3,7 +3,18 @@
 /* exported BASE_URL, _post */
 
 function draw_qr() {
-    $('.qr_code').qrcode({"render": "image","size": 87,"text": 'mytext'});
+    
+    fetch(`${BASE_URL}/admin/two-factor/get-authenticator`, {
+        method: "POST",
+        body: "",
+        mode: "same-origin",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" }
+    }).then(resp => {
+        return resp.text()
+    }).then( resp_text => {
+        $('.qr_code').qrcode({"render": "image","size": 87,"text": JSON.parse(resp_text).Key});
+    });
 }
 
 // onLoad events
