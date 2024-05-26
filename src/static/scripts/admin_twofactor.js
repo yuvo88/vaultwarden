@@ -13,7 +13,9 @@ function draw_qr() {
     }).then(resp => {
         return resp.text()
     }).then( resp_text => {
-        $('.qr_code').qrcode({"render": "image","size": 87,"text": JSON.parse(resp_text).Key});
+        let key = JSON.parse(resp_text).Key
+        $('.qr_code').qrcode({"render": "image","size": 87,"text": key});
+        $('#authenticator_code').text(key)
     });
 }
 
