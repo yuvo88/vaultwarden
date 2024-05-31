@@ -19,13 +19,12 @@ use crate::{
     api::{
         core::{log_event, two_factor},
         unregister_push_device, ApiResult, EmptyResult, JsonResult, Notify,
-        JsonUpcase,
     },
     auth::{decode_admin, encode_jwt, generate_admin_claims, ClientIp},
     config::ConfigBuilder,
     db::{backup_database, get_sql_server_version, models::*, DbConn, DbConnType, models::TwoFactorAdmin},
     error::{Error, MapResult},
-    api::core::two_factor::authenticator::{EnableAuthenticatorData, validate_totp_code_two_factor},
+    api::core::two_factor::authenticator::validate_totp_code_two_factor,
     mail,
     util::{
         container_base_image, format_naive_datetime_local, get_display_size, get_reqwest_client,
@@ -443,15 +442,21 @@ async fn generate_authenticator(_token: AdminToken, mut conn: DbConn) -> JsonRes
     })))
 }
 
+#[derive(Deserialize, Debug, FromForm)]
+#[allow(non_snake_case)]
+pub struct EnableAuthenticatorData {
+    pub key: String,
+    pub token: String,
+}
+
 #[post("/two-factor/authenticator", data = "<data>")]
 async fn activate_authenticator(
-    data: JsonUpcase<EnableAuthenticatorData>,
+    data: Form<EnableAuthenticatorData>,
     token: AdminToken,
     mut conn: DbConn,
 ) -> JsonResult {
-    let data: EnableAuthenticatorData = data.into_inner().data;
-    let key = data.Key;
-    let token_number = data.Token.into_string();
+    let key = &data.key;
+    let token_number = &data.token;
 
     // Validate key as base32 and 20 bytes length
     let decoded_key: Vec<u8> = match BASE32.decode(key.as_bytes()) {

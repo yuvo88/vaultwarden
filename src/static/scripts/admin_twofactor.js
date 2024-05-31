@@ -14,8 +14,7 @@ function draw_qr() {
         return resp.text()
     }).then( resp_text => {
         let key = JSON.parse(resp_text).Key
-        // $('.qr_code').qrcode({"render": "image","size": 87,"text": key})[0].classList.add('m-auto');
-        $('.qr_code').qrcode({"render": "image","size": 87,"text": `otpauth://totp/Vaultwarden:admin?secret=${key}&issuer=Vaultwarden`}); // Change 
+        $('.qr_code').qrcode({"render": "image","size": 87,"text": `otpauth://totp/Vaultwarden:admin?secret=${key}&issuer=Vaultwarden`});
         $('.qr_code').find('table')[0].classList.add('m-auto');
 
         $('#authenticator_code').text(key);

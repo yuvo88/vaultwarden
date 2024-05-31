@@ -11,11 +11,11 @@
                     </div>
                     
                     <div class="qr_code m-auto w-50"></div>
-                    <h6 id="authenticator_code" class="text-blue mb-3 text-center"></h6>
+                    <h6 id="authenticator_code" class="mb-3 text-center"></h6>
                     <form class="form-inline" action="{{urlpath}}/admin/two-factor/authenticator" method="post">
-                        <input type="hidden" name="Key" id="Key">
-                        <input type="text" name="Token">
-                        <button type="submit"></button>
+                        <input type="hidden" name="key" id="Key">
+                        <input type="text" name="token">
+                        <input type="submit">
                     </form>
                 </div>
             </div>
