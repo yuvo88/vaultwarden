@@ -418,8 +418,11 @@ async fn get_users_json(_token: AdminToken, mut conn: DbConn) -> Json<Value> {
 
 #[get("/two-factor")]
 async fn two_factor_authentication(_token: AdminToken, mut _conn: DbConn) -> ApiResult<Html<String>> {
-    let data: Vec<Value> = Vec::with_capacity(0);
-    let text = AdminTemplateData::new("admin/two_factor", json!(data)).render()?;
+    let json = json!({
+        "page_content": "admin/two_factor",
+        "urlpath": CONFIG.domain_path()
+    });
+    let text = CONFIG.render_template(BASE_TEMPLATE, &json)?;
     Ok(Html(text))
 }
 
