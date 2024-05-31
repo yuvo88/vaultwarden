@@ -12,10 +12,12 @@
                     
                     <div class="qr_code m-auto w-50"></div>
                     <h6 id="authenticator_code" class="mb-3 text-center"></h6>
-                    <form class="form-inline" action="{{urlpath}}/admin/two-factor/authenticator" method="post">
+                    <form class="form-inline w-50 m-auto" action="{{urlpath}}/admin/two-factor/authenticator" method="post">
                         <input type="hidden" name="key" id="Key">
-                        <input type="text" name="token">
-                        <input type="submit">
+                        <div class="m-auto w-fit-content">
+                            <input type="text" name="token">
+                            <input type="submit" class="m-auto">    
+                        </div>
                     </form>
                 </div>
             </div>
