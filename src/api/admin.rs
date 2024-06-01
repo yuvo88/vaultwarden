@@ -420,7 +420,8 @@ async fn get_users_json(_token: AdminToken, mut conn: DbConn) -> Json<Value> {
 async fn two_factor_authentication(_token: AdminToken, mut _conn: DbConn) -> ApiResult<Html<String>> {
     let json = json!({
         "page_content": "admin/two_factor",
-        "urlpath": CONFIG.domain_path()
+        "urlpath": CONFIG.domain_path(),
+        "authenticator_type": TwoFactorType::Authenticator as i32
     });
     let text = CONFIG.render_template(BASE_TEMPLATE, &json)?;
     Ok(Html(text))
