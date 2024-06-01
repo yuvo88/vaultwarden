@@ -68,6 +68,7 @@ pub fn routes() -> Vec<Route> {
         two_factor_authentication,
         generate_authenticator,
         activate_authenticator,
+        disable_twofactor,
     ]
 }
 
@@ -479,6 +480,27 @@ async fn activate_authenticator(
         "Enabled": true,
         "Key": key,
         "Object": "twoFactorAuthenticator"
+    })))
+}
+
+#[derive(Deserialize, FromForm)]
+#[allow(non_snake_case)]
+struct DisableTwoFactorData {
+    type_: i32,
+}
+
+#[post("/two-factor/disable", data = "<data>")]
+async fn disable_twofactor(data: Form<DisableTwoFactorData>, mut conn: DbConn) -> JsonResult {
+    let type_ = data.type_;
+
+    if let Some(twofactor) = TwoFactorAdmin::find_by_type(type_, &mut conn).await {
+        twofactor.delete(&mut conn).await?;
+    }
+
+    Ok(Json(json!({
+        "Enabled": false,
+        "Type": type_,
+        "Object": "twoFactorProvider"
     })))
 }
 
