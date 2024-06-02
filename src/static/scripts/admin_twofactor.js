@@ -13,7 +13,13 @@ function draw_qr() {
     }).then(resp => {
         return resp.text()
     }).then( resp_text => {
-        let key = JSON.parse(resp_text).Key
+        let resp_json = JSON.parse(resp_text)
+        let key = resp_json.Key
+        if (resp_json.Enabled) {
+            $('#not-enabled-form').hide();
+        } else {
+            $('#enabled-form').hide();
+        }
         $('.qr_code').qrcode({"render": "image","size": 87,"text": `otpauth://totp/Vaultwarden:admin?secret=${key}&issuer=Vaultwarden`});
         $('.qr_code').find('table')[0].classList.add('m-auto');
 

@@ -13,16 +13,18 @@
                     <div class="qr_code m-auto w-50"></div>
                     <br/>
                     <h5 id="authenticator_code" class="mb-3 text-center"></h5>
-                    <form class="form-inline w-50 m-auto" action="{{urlpath}}/admin/two-factor/authenticator" method="post">
+                    <form id='not-enabled-form' class="form-inline w-50 m-auto" action="{{urlpath}}/admin/two-factor/authenticator" method="post">
                         <input type="hidden" name="key" id="Key">
                         <div class="m-auto w-fit-content input-group">
                             <input type="text" name="token" class="form-control conf-password">
                             <button type="submit" class="btn btn-outline-secondary input-group-text">Sumbit</button>                                    
                         </div>
                     </form>
-                    <form class="form-inline w-50 m-auto" action="{{urlpath}}/admin/two-factor/disable" method="post">
-                        <input type="hidden" name="type_" id="Type" value="{{authenticator_type}}">
-                        <button type="submit" class="btn btn-outline-secondary input-group-text">Turn Off</button>
+                    <form id='enabled-form' class="form-inline w-50 m-auto" action="{{urlpath}}/admin/two-factor/disable" method="post">
+                        <input type="hidden" name="type_" id="Type" value="{{page_data.authenticator_type}}">
+                        <div class="m-auto w-fit-content input-group">
+                            <button type="submit" class="btn btn-outline-secondary input-group-text">Turn Off</button>
+                        </div>
                     </form>
                 </div>
             </div>
