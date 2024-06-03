@@ -128,10 +128,10 @@ async fn _generate_recover_code(user: &mut User, conn: &mut DbConn) {
 
 #[derive(Deserialize)]
 #[allow(non_snake_case)]
-struct DisableTwoFactorData {
-    MasterPasswordHash: Option<String>,
-    Otp: Option<String>,
-    Type: NumberOrString,
+pub struct DisableTwoFactorData {
+    pub MasterPasswordHash: Option<String>,
+    pub Otp: Option<String>,
+    pub Type: NumberOrString,
 }
 
 #[post("/two-factor/disable", data = "<data>")]

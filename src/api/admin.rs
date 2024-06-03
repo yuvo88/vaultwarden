@@ -14,11 +14,13 @@ use rocket::{
     Catcher, Route,
 };
 
+use crate::api::core::two_factor::authenticator::EnableAuthenticatorData;
+use crate::api::core::two_factor::DisableTwoFactorData;
 use crate::crypto;
 use crate::{
     api::{
         core::{log_event, two_factor},
-        unregister_push_device, ApiResult, EmptyResult, JsonResult, Notify,
+        unregister_push_device, ApiResult, EmptyResult, JsonResult, Notify, JsonUpcase
     },
     auth::{decode_admin, encode_jwt, generate_admin_claims, ClientIp},
     config::ConfigBuilder,
@@ -442,21 +444,16 @@ async fn generate_authenticator(_token: AdminToken, mut conn: DbConn) -> JsonRes
     })))
 }
 
-#[derive(Deserialize, Debug, FromForm)]
-#[allow(non_snake_case)]
-pub struct EnableAuthenticatorData {
-    pub key: String,
-    pub token: String,
-}
-
 #[post("/two-factor/authenticator", data = "<data>")]
 async fn activate_authenticator(
-    data: Form<EnableAuthenticatorData>,
+    data: JsonUpcase<EnableAuthenticatorData>,
     token: AdminToken,
     mut conn: DbConn,
 ) -> JsonResult {
-    let key = &data.key;
-    let token_number = &data.token;
+    let data = data.into_inner().data;
+
+    let key = &data.Key;
+    let token_number = &data.Token.into_string();
 
     // Validate key as base32 and 20 bytes length
     let decoded_key: Vec<u8> = match BASE32.decode(key.as_bytes()) {
@@ -482,15 +479,10 @@ async fn activate_authenticator(
     })))
 }
 
-#[derive(Deserialize, FromForm)]
-#[allow(non_snake_case)]
-struct DisableTwoFactorData {
-    type_: i32,
-}
-
 #[post("/two-factor/disable", data = "<data>")]
-async fn disable_twofactor(data: Form<DisableTwoFactorData>, mut conn: DbConn) -> JsonResult {
-    let type_ = data.type_;
+async fn disable_twofactor(data: JsonUpcase<DisableTwoFactorData>, mut conn: DbConn) -> JsonResult {
+    let data = data.into_inner().data;
+    let type_ = data.Type.into_i32()?;
 
     if let Some(twofactor) = TwoFactorAdmin::find_by_type(type_, &mut conn).await {
         twofactor.delete(&mut conn).await?;
